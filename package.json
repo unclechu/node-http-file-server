@@ -1,0 +1,34 @@
+{
+    "name": "http-file-server",
+    "description": "HTTP file server",
+    "keywords": [
+        "http",
+        "file",
+        "server",
+        "sharing",
+        "markup"
+    ],
+    "license": "GPLv3",
+    "version": "0.1.0",
+    "author": "Viacheslav Lotsmanov (unclechu) <lotsmanov89@gmail.com>",
+    "email": "lotsmanov89@gmail.com",
+    "authors": [
+        {
+            "name": "Viacheslav Lotsmanov",
+            "nickname": "unclechu",
+            "email": "lotsmanov89@gmail.com"
+        }
+    ],
+    "homepage": "https://github.com/unclechu/node-http-file-server",
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/unclechu/node-http-file-server.git"
+    },
+    "bugs": {
+        "url": "https://github.com/unclechu/node-http-file-server/issues"
+    },
+    "engines": {
+        "node": ">=0.9.0"
+    },
+    "main": "http-file-server"
+}
