@@ -2,7 +2,7 @@
 /**
  * Node.JS HTTP file server
  *
- * Version: 0.2
+ * Version: 0.2.1
  * Author: Viacheslav Lotsmanov (unclechu)
  * Contact: https://docs.google.com/spreadsheet/embeddedform?formkey=dFFZWk9PV0cyaTFXZlJMcnZFLVBaV3c6MQ
  * License: GPLv3
@@ -13,6 +13,8 @@ var host         = 'localhost';
 var port         = 8080;
 var filesPath    = null;
 var browse       = false;
+var debug        = false;
+
 var defEnc       = 'utf-8';
 var contentTypes = {
     // case insensitive
@@ -48,6 +50,7 @@ for (var i=2, arg=process.argv[i]; i<process.argv.length; i++, arg=process.argv[
             +'--host=abc  Hostname of http-server (default is "'+host+'"), use "*" for any host\n'
             +'--port=abc  Port of http-server (default is "'+port+'")\n'
             +'--browse    Open hostname in browser (via "xdg-open")\n'
+            +'--debug     Logging every request\n'
         );
         process.exit(0);
     } else if (/^--path=.+$/.test(arg)) {
@@ -59,6 +62,8 @@ for (var i=2, arg=process.argv[i]; i<process.argv.length; i++, arg=process.argv[
         port = arg.replace(/^--port=/, '');
     } else if (/^--browse$/.test(arg)) {
         browse = true;
+    } else if (/^--debug$/.test(arg)) {
+        debug = true;
     } else {
         console.error('Unknown argument "'+arg+'"');
         console.log('Run with --help argument for view usage information');
@@ -82,7 +87,7 @@ http.createServer(function (req, res) {
     while (pathname.substr(0, 1) == '/') {
         pathname = pathname.substr(1);
     }
-    console.log('HTTP-request for pathname: "'+pathname+'"');
+    debug && console.log('HTTP-request for pathname: "'+pathname+'"');
     var fullPath = path.join(filesPath, pathname);
     var msgHTTP200 = ' (HTTP status: 200)';
     var msgHTTP404 = ' (HTTP status: 404)';
@@ -104,10 +109,10 @@ http.createServer(function (req, res) {
             +'</html>';
         var listElementTemplate = '<li>#TYPE# <a href="#LINK#">#TITLE#</a></li>';
 
-        console.log('Listing directory "'+fullPath+'" ...');
+        debug && console.log('Listing directory "'+fullPath+'" ...');
         fs.readdir(fullPath, function (err, files) {
             if (err) {
-                console.error('Read dir error "'+fullPath+'"'+msgHTTP500);
+                debug && console.error('Read dir error "'+fullPath+'"'+msgHTTP500);
                 tellAboutError(500, 'Can\'t read dir.');
                 return;
             }
@@ -154,17 +159,17 @@ http.createServer(function (req, res) {
                 .replace(/#PATHNAME#/g, '/' + pathname)
                 .replace(/#LIST_ELEMENTS#/g, listElements);
 
-            console.log('Directory "'+fullPath+'" is opened'+msgHTTP200);
+            debug && console.log('Directory "'+fullPath+'" is opened'+msgHTTP200);
             res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
             res.end(html);
         });
     }
 
     function openFile() {
-        console.log('Opening file "'+fullPath+'" ...');
+        debug && console.log('Opening file "'+fullPath+'" ...');
         fs.readFile(fullPath, function (err, data) {
             if (err) {
-                console.error('Open file error "'+fullPath+'"'+msgHTTP500);
+                debug && console.error('Open file error "'+fullPath+'"'+msgHTTP500);
                 tellAboutError(500, 'Can\'t open the file.');
                 return;
             }
@@ -172,7 +177,7 @@ http.createServer(function (req, res) {
             for (var ext in contentTypes) {
                 if (ext == '*') continue;
                 if (ext == path.extname(fullPath)) {
-                    console.log('File "'+fullPath+'" is opened as "'+contentTypes[ext]+'"'+msgHTTP200);
+                    debug && console.log('File "'+fullPath+'" is opened as "'+contentTypes[ext]+'"'+msgHTTP200);
                     res.writeHead(200, {'Content-Type': contentTypes[ext]});
                     res.end(data);
                     return;
@@ -180,10 +185,10 @@ http.createServer(function (req, res) {
             }
 
             if (typeof contentTypes['*'] === 'string') {
-                console.log('File "'+fullPath+'" is opened as "'+contentTypes['*']+'"'+msgHTTP200);
+                debug && console.log('File "'+fullPath+'" is opened as "'+contentTypes['*']+'"'+msgHTTP200);
                 res.writeHead(200, {'Content-Type': contentTypes['*']});
             } else {
-                console.log('File "'+fullPath+'" is opened'+msgHTTP200);
+                debug && console.log('File "'+fullPath+'" is opened'+msgHTTP200);
             }
             res.end(data);
         });
@@ -196,7 +201,7 @@ http.createServer(function (req, res) {
 
     fs.exists(fullPath, function (exists) {
         if ( ! exists) {
-            console.error('Path "'+fullPath+'" is not found'+msgHTTP404);
+            debug && console.error('Path "'+fullPath+'" is not found'+msgHTTP404);
             tellAboutError(404, 'Path not found.');
             return;
         }
@@ -207,7 +212,7 @@ http.createServer(function (req, res) {
             } else if (stat.isDirectory()) {
                 process.nextTick(listDir);
             } else {
-                console.error('Unknown type of inode "'+fullPath+'"'+msgHTTP500);
+                debug && console.error('Unknown type of inode "'+fullPath+'"'+msgHTTP500);
                 tellAboutError(500, 'Unknown type of inode.');
                 return;
             }
