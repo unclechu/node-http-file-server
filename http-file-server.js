@@ -2,46 +2,69 @@
 /**
  * Node.JS HTTP file server
  *
- * Version: 0.1
+ * Version: 0.2
  * Author: Viacheslav Lotsmanov (unclechu)
  * Contact: https://docs.google.com/spreadsheet/embeddedform?formkey=dFFZWk9PV0cyaTFXZlJMcnZFLVBaV3c6MQ
  * License: GPLv3
  */
 
-// configs
-var host = 'localhost';
-var port = 8080;
-var filesPath = null;
-var defEnc = 'utf-8';
+// default configs
+var host         = 'localhost';
+var port         = 8080;
+var filesPath    = null;
+var browse       = false;
+var defEnc       = 'utf-8';
 var contentTypes = {
     // case insensitive
-    '.html': 'text/html; charset='+defEnc,
-    '.css': 'text/css; charset='+defEnc,
-    '.js': 'text/javascript; charset='+defEnc,
-    '.txt': 'text/plain; charset='+defEnc,
-    '.png': 'image/png',
-    '.jpeg': 'image/jpeg',
-    '.jpg': 'image/jpeg',
-    '.jpe': 'image/jpeg',
-    '.gif': 'image/gif',
-    '.svg': 'image/svg+xml',
-    '.svgz': 'image/svg+xml',
-    '.ico': 'image/x-icon',
+    '.html' : 'text/html; charset='+defEnc,
+    '.css'  : 'text/css; charset='+defEnc,
+    '.js'   : 'text/javascript; charset='+defEnc,
+    '.txt'  : 'text/plain; charset='+defEnc,
+    '.png'  : 'image/png',
+    '.jpeg' : 'image/jpeg',
+    '.jpg'  : 'image/jpeg',
+    '.jpe'  : 'image/jpeg',
+    '.gif'  : 'image/gif',
+    '.svg'  : 'image/svg+xml',
+    '.svgz' : 'image/svg+xml',
+    '.ico'  : 'image/x-icon',
 
     // downloading other files
-    '*': 'application/octet-stream'
+    '*'     : 'application/octet-stream'
 };
 
 var http = require('http');
 var fs = require('fs');
 var path = require('path');
 var url = require('url');
+var spawn = require('child_process').spawn;
 
-process.argv.forEach(function (value) {
-    if (filesPath === null && /^--path=.+$/.test(value)) {
-        filesPath = value.replace(/^--path=/, '');
+for (var i=2, arg=process.argv[i]; i<process.argv.length; i++, arg=process.argv[i]) {
+    if (/^--help$/.test(arg)) {
+        console.log(
+            '\nUSAGE\n=====\n\n'
+            +'--help      View this information\n'
+            +'--path=abc  Set path of file server root directory (default is current dir)\n'
+            +'--host=abc  Hostname of http-server (default is "'+host+'"), use "*" for any host\n'
+            +'--port=abc  Port of http-server (default is "'+port+'")\n'
+            +'--browse    Open hostname in browser (via "xdg-open")\n'
+        );
+        process.exit(0);
+    } else if (/^--path=.+$/.test(arg)) {
+        if (filesPath === null) filesPath = arg.replace(/^--path=/, '');
+    } else if (/^--host=.+$/.test(arg)) {
+        host = arg.replace(/^--host=/, '');
+        if (host == '*') host = null;
+    } else if (/^--port=.+$/.test(arg)) {
+        port = arg.replace(/^--port=/, '');
+    } else if (/^--browse$/.test(arg)) {
+        browse = true;
+    } else {
+        console.error('Unknown argument "'+arg+'"');
+        console.log('Run with --help argument for view usage information');
+        process.exit(1);
     }
-});
+}
 
 if (filesPath === null) {
     filesPath = process.cwd();
@@ -191,7 +214,13 @@ http.createServer(function (req, res) {
         });
     });
 }).listen(port, host, function () {
+    var httpAddr = 'http://'+((host) ? host : 'localhost')+':'+port;
+    var host = (host) ? host : '*';
     console.log('HTTP-server started at '+host+':'+port+', files path is: "'+filesPath+'"');
+    if (browse) {
+        console.log('Start xdg-open to open page "'+httpAddr+'" in browser');
+        spawn("xdg-open", [httpAddr], { stdio: 'inherit' });
+    }
 });
 
 // vim: set ts=4 sw=4 expandtab :
