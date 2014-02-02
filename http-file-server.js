@@ -198,7 +198,7 @@ http.createServer(function (req, res) {
 
     function openFile() {
         debug && console.log('Opening file "'+fullPath+'" ...');
-        var stream = fs.createReadStream(fullPath, {
+        var stream = fs.createReadStream(fullPath, 'binary', {
             flags: 'r',
             encoding: defEnc,
             autoClose: true
@@ -237,7 +237,7 @@ http.createServer(function (req, res) {
 
         debug && console.log('Reading file "'+fullPath+'" ...');
         stream.on('data', function (chunk) {
-            res.write(chunk);
+            res.write(chunk, 'binary');
         });
 
         stream.on('error', function (err) {
