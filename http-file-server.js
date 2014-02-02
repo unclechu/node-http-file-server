@@ -122,7 +122,7 @@ http.createServer(function (req, res) {
         fs.readdir(fullPath, function (err, files) {
             if (err) {
                 debug && console.error('Read dir error "'+fullPath+'"'+msgHTTP500);
-                tellAboutError(500, 'Can\'t read dir.');
+                tellAboutError(500, 'Cannot read directory.');
                 return;
             }
 
@@ -169,7 +169,10 @@ http.createServer(function (req, res) {
                 .replace(/#LIST_ELEMENTS#/g, listElements);
 
             debug && console.log('Directory "'+fullPath+'" is opened'+msgHTTP200);
-            res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
+            res.writeHead(200, {
+                'Content-Type': 'text/html; charset=utf-8',
+                'Content-Length': Buffer.byteLength(html, defEnc)
+            });
             res.end(html);
         });
     }
