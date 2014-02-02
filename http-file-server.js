@@ -13,6 +13,7 @@ var port         = 8080;
 var filesPath    = null;
 var browse       = false;
 var debug        = false;
+var noCache      = false;
 
 var defEnc       = 'utf-8';
 var contentTypes = {
@@ -51,6 +52,7 @@ for (var i=2, arg=process.argv[i]; i<process.argv.length; i++, arg=process.argv[
             +'--port=abc  Port of http-server (default is "'+port+'")\n'
             +'--browse    Open hostname in browser (via "xdg-open")\n'
             +'--debug     Logging every request\n'
+            +'--no-cache  Disable caching in headers\n'
         );
         process.exit(0);
     } else if (/^--path=.+$/.test(arg)) {
@@ -64,6 +66,8 @@ for (var i=2, arg=process.argv[i]; i<process.argv.length; i++, arg=process.argv[
         browse = true;
     } else if (/^--debug$/.test(arg)) {
         debug = true;
+    } else if (/^--no-cache$/.test(arg)) {
+        noCache = true;
     } else {
         console.error('Unknown argument "'+arg+'"');
         console.log('Run with --help argument for view usage information');
@@ -168,11 +172,17 @@ http.createServer(function (req, res) {
                 .replace(/#PATHNAME#/g, '/' + pathname)
                 .replace(/#LIST_ELEMENTS#/g, listElements);
 
+            var head = {};
+            head['Content-Type'] = 'text/html; charset=utf-8';
+            head['Content-Length'] = Buffer.byteLength(html, defEnc);
+            if (noCache) {
+                head['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+                head['Pragma'] = 'no-cache';
+                head['Expires'] = '0';
+            }
+
             debug && console.log('Directory "'+fullPath+'" is opened'+msgHTTP200);
-            res.writeHead(200, {
-                'Content-Type': 'text/html; charset=utf-8',
-                'Content-Length': Buffer.byteLength(html, defEnc)
-            });
+            res.writeHead(200, head);
             res.end(html);
         });
     }
@@ -187,6 +197,12 @@ http.createServer(function (req, res) {
 
         var head = {};
         head['Content-Length'] = fileStat.size;
+
+        if (noCache) {
+            head['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+            head['Pragma'] = 'no-cache';
+            head['Expires'] = '0';
+        }
 
         for (var ext in contentTypes) {
             if (ext == '*') continue;
