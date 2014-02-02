@@ -18,11 +18,15 @@ var noCache      = false;
 var defEnc       = 'utf-8';
 var contentTypes = {
     // case insensitive
+
+    /** pages/styles/plain-text */
     '.html' : 'text/html; charset='+defEnc,
     '.css'  : 'text/css; charset='+defEnc,
     '.less' : 'text/css; charset='+defEnc, // see ‘less’ css framework
     '.js'   : 'text/javascript; charset='+defEnc,
     '.txt'  : 'text/plain; charset='+defEnc,
+
+    /** images */
     '.png'  : 'image/png',
     '.jpeg' : 'image/jpeg',
     '.jpg'  : 'image/jpeg',
@@ -32,7 +36,12 @@ var contentTypes = {
     '.svgz' : 'image/svg+xml; charset='+defEnc,
     '.ico'  : 'image/x-icon',
 
-    // downloading other files
+    /** fonts */
+    '.eot'  : 'application/vnd.ms-fontobject',
+    '.woff' : 'application/font-woff',
+    '.ttf'  : 'font/ttf',
+
+    /** downloading other files */
     '*'     : 'application/octet-stream'
 };
 
