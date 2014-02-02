@@ -1,8 +1,7 @@
 #!/usr/bin/env node
-/**
+/*!
  * Node.JS HTTP file server
  *
- * Version: 0.2.1
  * Author: Viacheslav Lotsmanov (unclechu)
  * Contact: https://docs.google.com/spreadsheet/embeddedform?formkey=dFFZWk9PV0cyaTFXZlJMcnZFLVBaV3c6MQ
  * License: GPLv3
@@ -27,8 +26,8 @@ var contentTypes = {
     '.jpg'  : 'image/jpeg',
     '.jpe'  : 'image/jpeg',
     '.gif'  : 'image/gif',
-    '.svg'  : 'image/svg+xml',
-    '.svgz' : 'image/svg+xml',
+    '.svg'  : 'image/svg+xml; charset='+defEnc,
+    '.svgz' : 'image/svg+xml; charset='+defEnc,
     '.ico'  : 'image/x-icon',
 
     // downloading other files
