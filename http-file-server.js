@@ -91,7 +91,7 @@ http.createServer(function (req, res) {
     while (pathname.substr(0, 1) == '/') {
         pathname = pathname.substr(1);
     }
-    debug && console.log('HTTP-request for pathname: "'+pathname+'"');
+    debug && console.log('HTTP-request for pathname: "/'+pathname+'"');
 
     var fullPath = path.join(filesPath, pathname);
     var fileDescriptor = null;
