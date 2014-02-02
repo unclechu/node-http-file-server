@@ -19,6 +19,7 @@ var contentTypes = {
     // case insensitive
     '.html' : 'text/html; charset='+defEnc,
     '.css'  : 'text/css; charset='+defEnc,
+    '.less' : 'text/css; charset='+defEnc, // see ‘less’ css framework
     '.js'   : 'text/javascript; charset='+defEnc,
     '.txt'  : 'text/plain; charset='+defEnc,
     '.png'  : 'image/png',
@@ -81,16 +82,25 @@ filesPath = filesPath
     .replace(/^\.\//, process.cwd()+'/');
 
 http.createServer(function (req, res) {
+    var msgHTTP200 = ' (HTTP status: 200)';
+    var msgHTTP404 = ' (HTTP status: 404)';
+    var msgHTTP500 = ' (HTTP status: 500)';
+
     var pathname = url.parse(req.url).pathname;
     pathname = decodeURIComponent(pathname.split('+').join(' '));
     while (pathname.substr(0, 1) == '/') {
         pathname = pathname.substr(1);
     }
     debug && console.log('HTTP-request for pathname: "'+pathname+'"');
+
     var fullPath = path.join(filesPath, pathname);
-    var msgHTTP200 = ' (HTTP status: 200)';
-    var msgHTTP404 = ' (HTTP status: 404)';
-    var msgHTTP500 = ' (HTTP status: 500)';
+    var fileDescriptor = null;
+    var fileStat = null;
+
+    function tellAboutError(errNum, errMsg) {
+        res.writeHead(errNum, {'Content-Type': 'text/plain; charset=utf-8'});
+        res.end('Error '+errNum+'. '+errMsg);
+    }
     
     function listDir() {
         var template = '<!doctype html>'
@@ -166,55 +176,90 @@ http.createServer(function (req, res) {
 
     function openFile() {
         debug && console.log('Opening file "'+fullPath+'" ...');
-        fs.readFile(fullPath, function (err, data) {
-            if (err) {
-                debug && console.error('Open file error "'+fullPath+'"'+msgHTTP500);
-                tellAboutError(500, 'Can\'t open the file.');
-                return;
-            }
+        var stream = fs.createReadStream(fullPath, {
+            flags: 'r',
+            encoding: defEnc,
+            autoClose: true
+        });
 
-            for (var ext in contentTypes) {
-                if (ext == '*') continue;
-                if (ext == path.extname(fullPath)) {
-                    debug && console.log('File "'+fullPath+'" is opened as "'+contentTypes[ext]+'"'+msgHTTP200);
-                    res.writeHead(200, {'Content-Type': contentTypes[ext]});
-                    res.end(data);
-                    return;
-                }
-            }
+        var head = {};
+        head['Content-Length'] = fileStat.size;
 
+        for (var ext in contentTypes) {
+            if (ext == '*') continue;
+            if (ext == path.extname(fullPath)) {
+                debug && console.log('File "'+fullPath+'" mime-type is "'
+                    +contentTypes[ext]+'"'+msgHTTP200);
+                head['Content-Type'] = contentTypes[ext];
+            }
+        }
+
+        if ( ! ('Content-Type' in head)) {
             if (typeof contentTypes['*'] === 'string') {
-                debug && console.log('File "'+fullPath+'" is opened as "'+contentTypes['*']+'"'+msgHTTP200);
-                res.writeHead(200, {'Content-Type': contentTypes['*']});
+                debug && console.log('File "'+fullPath+'" mime-type is "'
+                    +contentTypes['*']+'"'+msgHTTP200);
+                head['Content-Type'] = contentTypes['*'];
             } else {
-                debug && console.log('File "'+fullPath+'" is opened'+msgHTTP200);
+                debug && console.log('Cannot detect file mime-type "'
+                    +fullPath+'"'+msgHTTP200);
             }
-            res.end(data);
+        }
+
+        res.writeHead(200, head);
+
+        debug && console.log('Reading file "'+fullPath+'" ...');
+        stream.on('data', function (chunk) {
+            res.write(chunk);
+        });
+
+        stream.on('error', function (err) {
+            debug && console.error('Read file error "'+fullPath+'"'+msgHTTP500);
+            tellAboutError(500, 'Cannot read file.');
+        });
+
+        stream.on('end', function () {
+            debug && console.log('Reading file "'+fullPath+'" is finished');
+            res.end();
         });
     }
 
-    function tellAboutError(errNum, errMsg) {
-        res.writeHead(errNum, {'Content-Type': 'text/plain; charset=utf-8'});
-        res.end('Error '+errNum+'. '+errMsg);
+    function getStatCallback(err, stat) {
+        if (err) {
+            debug && console.error('Cannot get file stat "'+fullPath+'"'+msgHTTP500);
+            tellAboutError(500, 'Cannot open this path.');
+            return;
+        }
+
+        fileStat = stat;
+
+        if (fileStat.isFile()) {
+            process.nextTick(openFile);
+        } else if (fileStat.isDirectory()) {
+            process.nextTick(listDir);
+        } else {
+            debug && console.error('Unknown type of inode "'+fullPath+'"'+msgHTTP500);
+            tellAboutError(500, 'Cannot open this path.');
+            return;
+        }
     }
 
     fs.exists(fullPath, function (exists) {
         if ( ! exists) {
             debug && console.error('Path "'+fullPath+'" is not found'+msgHTTP404);
-            tellAboutError(404, 'Path not found.');
+            tellAboutError(404, 'Page not found.');
             return;
         }
 
-        fs.stat(fullPath, function (err, stat) {
-            if (stat.isFile()) {
-                process.nextTick(openFile);
-            } else if (stat.isDirectory()) {
-                process.nextTick(listDir);
-            } else {
-                debug && console.error('Unknown type of inode "'+fullPath+'"'+msgHTTP500);
-                tellAboutError(500, 'Unknown type of inode.');
+        /** opening file descriptor */
+        fs.open(fullPath, 'r', function (err, fd) {
+            if (err) {
+                debug && console.error('Cannot open file descriptor "'+fullPath+'"'+msgHTTP500);
+                tellAboutError(500, 'Cannot open this path.');
                 return;
             }
+
+            fileDescriptor = fd;
+            fs.fstat(fileDescriptor, getStatCallback);
         });
     });
 }).listen(port, host, function () {
@@ -223,8 +268,8 @@ http.createServer(function (req, res) {
     console.log('HTTP-server started at '+host+':'+port+', files path is: "'+filesPath+'"');
     if (browse) {
         console.log('Start xdg-open to open page "'+httpAddr+'" in browser');
-        spawn("xdg-open", [httpAddr], { stdio: 'inherit' });
+        spawn('xdg-open', [httpAddr], { stdio: 'inherit' });
     }
 });
 
-// vim: set ts=4 sw=4 expandtab :
+// vim: set fenc=utf-8 ts=4 sw=4 expandtab :
