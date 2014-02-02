@@ -1,4 +1,4 @@
-node-http-file-server
-=====================
+Simple HTTP file server (Node.JS)
+=================================
 
-Node.JS HTTP file server
+[![NPM](https://nodei.co/npm/http-file-server.png)](https://nodei.co/npm/http-file-server/)
