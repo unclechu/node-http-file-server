@@ -2,8 +2,7 @@
 /*!
  * Node.JS HTTP file server
  *
- * Author: Viacheslav Lotsmanov (unclechu)
- * Contact: https://docs.google.com/spreadsheet/embeddedform?formkey=dFFZWk9PV0cyaTFXZlJMcnZFLVBaV3c6MQ
+ * Author: Viacheslav Lotsmanov <lotsmanov89@gmail.com>
  * License: GPLv3
  */
 
@@ -114,7 +113,7 @@ http.createServer(function (req, res) {
         res.writeHead(errNum, {'Content-Type': 'text/plain; charset=utf-8'});
         res.end('Error '+errNum+'. '+errMsg);
     }
-    
+
     function listDir() {
         var template = '<!doctype html>'
             +'<html>'

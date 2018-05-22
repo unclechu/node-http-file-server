@@ -10,15 +10,7 @@
     ],
     "license": "GPLv3",
     "version": "0.2.5",
-    "author": "Viacheslav Lotsmanov (unclechu)",
-    "email": "lotsmanov89@gmail.com",
-    "authors": [
-        {
-            "name": "Viacheslav Lotsmanov",
-            "nickname": "unclechu",
-            "email": "lotsmanov89@gmail.com"
-        }
-    ],
+    "author": "Viacheslav Lotsmanov <lotsmanov89@gmail.com>",
     "homepage": "https://github.com/unclechu/node-http-file-server",
     "repository": {
         "type": "git",
